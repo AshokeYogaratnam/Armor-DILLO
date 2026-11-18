@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "armor-dillo"
+version = "0.1.0"
+description = "Autonomous armadillo-style shield controller for the Raspberry Pi 5"
+requires-python = ">=3.11"
+# Runtime deps (lgpio, picamera2, numpy, opencv, yaml, fastapi, uvicorn, websockets) come from apt;
+# install.sh installs this package with --no-deps so pip never replaces them.
+dependencies = []
+
+[project.scripts]
+shield = "shield.main:main"
+
+[tool.setuptools]
+packages = ["shield"]
+
+[tool.setuptools.package-data]
+shield = ["static/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

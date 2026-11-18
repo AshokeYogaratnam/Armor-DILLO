@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    { "name": "shield check", "type": "debugpy", "request": "launch", "module": "shield.main",
+      "args": ["check"], "console": "integratedTerminal", "cwd": "${workspaceFolder}" },
+    { "name": "shield check (no motor)", "type": "debugpy", "request": "launch", "module": "shield.main",
+      "args": ["check", "--no-motor"], "console": "integratedTerminal", "cwd": "${workspaceFolder}" },
+    { "name": "shield calibrate", "type": "debugpy", "request": "launch", "module": "shield.main",
+      "args": ["calibrate"], "console": "integratedTerminal", "cwd": "${workspaceFolder}" },
+    { "name": "shield home", "type": "debugpy", "request": "launch", "module": "shield.main",
+      "args": ["home"], "console": "integratedTerminal", "cwd": "${workspaceFolder}" },
+    { "name": "shield set (asks for coverage)", "type": "debugpy", "request": "launch", "module": "shield.main",
+      "args": ["set", "${input:coverage}"], "console": "integratedTerminal", "cwd": "${workspaceFolder}" },
+    { "name": "shield run", "type": "debugpy", "request": "launch", "module": "shield.main",
+      "args": ["run"], "console": "integratedTerminal", "cwd": "${workspaceFolder}" }
+  ],
+  "inputs": [
+    { "id": "coverage", "type": "promptString", "description": "coverage 0..1", "default": "0.5" }
+  ]
+}

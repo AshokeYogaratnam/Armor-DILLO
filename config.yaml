@@ -1,0 +1,142 @@
+# Armor-DILLO configuration. This file is the single source of every tunable.
+# Point $SHIELD_CONFIG at another file to override it.
+
+pins:                       # BCM numbering, 3.3 V logic. See docs/wiring.md
+  rpwm: 19                  # BTS7960 RPWM (forward), hardware PWM
+  lpwm: 18                  # BTS7960 LPWM (reverse), hardware PWM
+  r_en: 23                  # R_EN and L_EN are always driven together
+  l_en: 24
+  enc_a: 5
+  enc_b: 6
+  mode_switch: 17           # AUTO/MANUAL toggle, active-low
+  btn_open: 27              # momentary, active-low
+  btn_close: 22             # momentary, active-low
+  limit_open: 20            # optional, active-low
+  limit_closed: 21          # optional, active-low
+
+pwm:
+  frequency_hz: 20000       # BTS7960 max is 25 kHz
+  software_fallback: true   # use lgpio software PWM if the overlay is missing (warns)
+  software_max_hz: 10000    # lgpio software PWM limit
+  software_max_duty: 0.30   # software PWM jitters; keep it gentle
+
+motor:
+  close_direction: forward  # forward (RPWM) or reverse (LPWM) closes the shield; `shield check` tells you
+  max_duty: 1.0
+  reverse_brake_ms: 20      # brake this long before any direction reversal
+
+encoder:
+  counts_per_motor_rev: 28  # HD Hex, x4 quadrature at the motor shaft
+  gear_ratio: 1.0           # no gearbox: the motor drives the shell gear directly (28 counts/gear rev)
+  invert: false             # set so forward (RPWM) counts UP; `shield check` tells you
+
+limits:
+  enabled: false            # without switches, homing stalls gently into the open hard stop
+
+# Positions are motor-shaft encoder counts from the open hard stop (0) toward closed.
+motion:
+  travel_counts: null       # open stop -> closed stop; written by `shield calibrate`
+  close_time_s: null        # full close at max speed; written by `shield calibrate`
+  free_speed: 2800          # counts/s at full duty (HD Hex ~6000 rpm); written by `shield calibrate`
+  max_speed: 2500           # counts/s cap for normal moves (emergency close ignores the profile)
+  accel: 20000              # counts/s^2, trapezoidal profile
+  soft_margin_counts: 6     # soft limits sit this far inside each hard stop (~0.2 gear rev)
+  tolerance_counts: 1       # "arrived" band (1 count = ~13 deg of the gear)
+  drift_counts: 4           # re-correct if pushed further than this while holding
+  hold: brake               # brake (friction holds the shell) | pwm (low holding duty)
+  hold_duty: 0.10           # max duty for hold: pwm
+  spool_diameter_mm: null   # optional: report travel in mm
+
+pid:                        # u = feedforward(v_ref) + kp*e + ki*integral(e) + kd*(v_ref - v)
+  kp: 0.03                  # duty per count of error (saturates ~33 counts = ~1.2 gear revs out)
+  ki: 0.0
+  kd: 0.0003                # duty per count/s of velocity error (damping; brakes ~1 rev out at full speed)
+  integral_limit: 5.0       # count*s
+  min_duty: 0.12            # smallest duty that still moves the shell
+
+homing:
+  duty: 0.20                # gentle push into the open stop. No gearbox = little torque: raise this
+                            # if homing "finds" the stop without the shell moving
+  timeout_s: 30
+
+stall:                      # driving at >= min_duty but < min_counts of motion for timeout_ms
+  min_duty: 0.10
+  timeout_ms: 300
+  min_counts: 2             # direct drive, no backlash (28 counts per gear rev)
+
+control:
+  loop_hz: 200
+  watchdog_ms: 200          # brake if the control loop misses this long
+
+override:
+  debounce_ms: 20
+  manual_when_switch_closed: true  # MANUAL position grounds GPIO17, so a broken wire reads AUTO
+
+camera:
+  width: 320                # processing size
+  height: 240
+  fps: 58                   # OV5647 640x480 mode tops out at ~58.9 fps
+  sensor_size: [640, 480]
+  read_timeout_s: 0.5       # a frame read slower than this = camera error, reopen it
+  fail_safe: close          # close | none: what to do if the camera fails while the shield is open
+  min_fps: 40               # below this (over 2 s) the camera counts as unhealthy
+  frozen_frames: 15         # this many bit-identical frames in a row = frozen
+  dark_level: 8             # mean grey below this = black frame (lens cap, unplugged)
+  bright_level: 247         # mean grey above this = saturated
+  bad_hold_s: 0.5           # black/saturated must persist this long to count
+
+# Falling objects: background subtraction + frame differencing find a moving blob, sparse
+# Lucas-Kanade flow on it gives its expansion rate, and time-to-contact = 1 / expansion rate.
+# Detection only runs while the shield is fully OPEN in AUTO (the shell would be in view otherwise).
+impact:
+  warmup_s: 1.0             # after (re)arming, learn the background this long first
+  diff_threshold: 25        # grey levels: changed vs background / previous frame
+  min_area_px: 12           # smallest blob worth tracking
+  background_rate: 0.05     # running-average background update per frame
+  max_features: 30          # LK points per blob
+  min_points: 5             # fewer tracked points = fall back to blob-area growth
+  window_frames: 4          # expansion rate averaged over this many frames
+  confirm_frames: 2         # TTC under threshold this many frames in a row = CRITICAL
+  ttc_threshold_s: null     # null = motion.close_time_s + ttc_margin_s
+  ttc_margin_s: 0.3
+  ttc_fallback_s: 1.5       # threshold while close_time_s is unknown
+
+# Dust: three scores vs a clear-air baseline learned at arming, each 0..1 between [lo, hi]:
+#   contrast  = drop in Laplacian variance (fine detail washes out)
+#   haze      = rise of the dark channel (local minimum brightness) toward white
+#   particles = moving specks per frame (small-particle flow density)
+# severity = weighted mean, smoothed, with hysteresis on the levels.
+dust:
+  warmup_s: 2.0             # learn the clear-air baseline this long after (re)arming
+  diff_threshold: 15        # grey-level change that makes a pixel "moving" (half resolution)
+  max_particle_px: 6        # moving specks up to this size count as particles (half resolution)
+  contrast_drop: [0.2, 0.7]
+  haze_rise: [0.05, 0.30]
+  particles: [5, 60]
+  weights: [0.4, 0.3, 0.3]  # contrast, haze, particles
+  min_contrast: 5.0         # floor for the contrast baseline (a very smooth sky)
+  smoothing: 0.05           # per-frame EMA of severity (~0.3 s at 58 fps)
+  warn_on: 0.30
+  warn_off: 0.20
+  severe_on: 0.60
+  severe_off: 0.50
+  severe_hold_s: 1.0        # SEVERE this long -> full close
+  sustained_s: 10.0         # WARNING (or worse) this long -> full close
+  baseline_rate: 0.0003     # follow slow sky changes (~1 min) while clear
+
+policy:
+  dust_partial_close: false # true: a dust WARNING closes to coverage = severity. Any partial close
+                            # puts the shell in view, so detection stops until a manual retract
+  shed_cycles: 0            # >0: after a dust close, a manual OPEN first wiggles this many times
+  shed_amplitude: 0.1       # wiggle depth (coverage)
+
+dashboard:
+  enabled: true
+  host: 127.0.0.1           # local only. 0.0.0.0 exposes it to the network, with NO login
+  port: 8000
+  preview_fps: 10           # MJPEG preview; frames are skipped if the browser is slow
+  external_hazards: false   # true: accept POST /hazard from another system
+
+logging:
+  level: INFO
+  file: logs/shield.log     # relative to the repo; rotates at 5 MB, keeps 5

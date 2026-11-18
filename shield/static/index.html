@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Armor-DILLO</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <h1>ARMOR<span>-</span>DILLO</h1>
+  <div id="state" class="badge">…</div>
+  <div id="reason" class="reason"></div>
+  <div id="conn" class="conn">connecting</div>
+</header>
+
+<div id="banner" class="banner hidden"></div>
+
+<main>
+  <section class="card preview">
+    <div class="card-head"><h2>Camera</h2><span id="armed" class="pill">—</span></div>
+    <div class="frame"><img id="stream" alt="camera preview"><div id="nocam" class="nocam hidden">no preview</div></div>
+    <div class="row3">
+      <div class="hz" id="hz-impact">
+        <h3>Falling object</h3>
+        <div class="level" id="impact-level">—</div>
+        <dl><dt>TTC</dt><dd id="impact-ttc">—</dd><dt>blob</dt><dd id="impact-area">—</dd><dt>LK pts</dt><dd id="impact-points">—</dd></dl>
+      </div>
+      <div class="hz" id="hz-dust">
+        <h3>Dust</h3>
+        <div class="level" id="dust-level">—</div>
+        <div class="meter"><span>severity</span><i><b id="dust-sev"></b></i><em id="dust-sev-n"></em></div>
+        <div class="meter"><span>contrast</span><i><b id="dust-c"></b></i><em id="dust-c-n"></em></div>
+        <div class="meter"><span>haze</span><i><b id="dust-h"></b></i><em id="dust-h-n"></em></div>
+        <div class="meter"><span>particles</span><i><b id="dust-p"></b></i><em id="dust-p-n"></em></div>
+      </div>
+      <div class="hz" id="hz-camera">
+        <h3>Camera health</h3>
+        <div class="level" id="cam-level">—</div>
+        <dl><dt>fps</dt><dd id="cam-fps">—</dd><dt>dropped</dt><dd id="cam-dropped">—</dd><dt>process</dt><dd id="cam-proc">—</dd></dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="card control">
+    <div class="card-head"><h2>Shield</h2><span id="source" class="pill">—</span></div>
+    <div class="cov-num"><span id="cov">—</span><small>coverage</small></div>
+    <div class="covbar"><div id="cov-fill"></div><div id="cov-goal" class="mark goal"></div><div id="cov-req" class="mark req"></div></div>
+    <div class="covlegend"><span>open</span><span><i class="dot goal"></i>target <i class="dot req"></i>request</span><span>closed</span></div>
+    <div class="slider">
+      <input id="slider" type="range" min="0" max="100" value="0">
+      <button id="set" class="btn">Set <span id="slider-n">0%</span></button>
+    </div>
+    <div class="btns">
+      <button id="open" class="btn">OPEN</button>
+      <button id="close" class="btn">CLOSE</button>
+    </div>
+    <button id="emergency" class="btn emergency">EMERGENCY CLOSE</button>
+    <p class="note">Dashboard commands are requests. The physical MANUAL switch always wins, and
+      after a hazard close only a manual retract (MANUAL → OPEN → AUTO) reopens the shield.</p>
+
+    <h3>Override</h3>
+    <div class="switches">
+      <div id="ov-mode" class="sw">AUTO</div><div id="ov-open" class="sw">OPEN btn</div><div id="ov-close" class="sw">CLOSE btn</div>
+    </div>
+
+    <h3>Latency</h3>
+    <dl class="grid">
+      <dt>capture → detect</dt><dd id="lat-live">—</dd>
+      <dt>TTC threshold</dt><dd id="lat-thr">—</dd>
+      <dt>close time</dt><dd id="lat-close">—</dd>
+      <dt>last close</dt><dd id="lat-last">—</dd>
+    </dl>
+
+    <h3>Motor</h3>
+    <dl class="grid">
+      <dt>mode</dt><dd id="m-mode">—</dd>
+      <dt>position</dt><dd id="m-pos">—</dd>
+      <dt>speed</dt><dd id="m-vel">—</dd>
+      <dt>duty</dt><dd id="m-duty">—</dd>
+      <dt>PWM</dt><dd id="m-pwm">—</dd>
+      <dt>enc errors / watchdog / overruns</dt><dd id="m-health">—</dd>
+    </dl>
+  </section>
+
+  <section class="card events">
+    <div class="card-head"><h2>Events</h2></div>
+    <ol id="events"></ol>
+  </section>
+</main>
+<script src="/app.js"></script>
+</body>
+</html>

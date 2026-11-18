@@ -1,0 +1,31 @@
+# Installed by install.sh (with @REPO@/@USER@ filled in). Autostarts `shield run` on boot.
+# Stop it before running the shield from VS Code (they would fight over the GPIO pins):
+#   sudo systemctl stop shield
+[Unit]
+Description=Armor-DILLO shield controller
+After=multi-user.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=notify
+NotifyAccess=main
+User=@USER@
+SupplementaryGroups=gpio video
+WorkingDirectory=@REPO@
+Environment=PYTHONUNBUFFERED=1
+ExecStartPre=@REPO@/safe_stop.sh
+ExecStart=@REPO@/.venv/bin/shield run
+# Runs after ANY exit, including SIGKILL and watchdog kills: sysfs PWM survives a dead
+# process, so force the motor to coast.
+ExecStopPost=@REPO@/safe_stop.sh
+# The control loop pings systemd every 0.5 s; if it goes quiet for 2 s, systemd kills it.
+WatchdogSec=2
+TimeoutStartSec=60
+TimeoutStopSec=5
+Restart=on-failure
+RestartSec=2
+Nice=-10
+
+[Install]
+WantedBy=multi-user.target
