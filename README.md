@@ -172,3 +172,4 @@ docs/wiring.md      pin map
 shield.service      systemd unit (installed by install.sh)
 safe_stop.sh        EN low + PWM 0 without Python
 ```
+- http://127.0.0.1:8000
